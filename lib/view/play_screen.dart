@@ -18,6 +18,7 @@ class PlayScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    TextEditingController controller = TextEditingController();
     return ChangeNotifierProvider(
       create: (_) => PlayScreenProvider(contents, rows, columns),
       child: Scaffold(
@@ -27,6 +28,7 @@ class PlayScreen extends StatelessWidget {
 //coustem_searche_bar-----------------------------------------------------------
             Consumer<PlayScreenProvider>(
               builder: (context, provider, _) => TextField(
+                controller: controller,
                 onChanged: provider.textChanged,
                 decoration: const InputDecoration(
                   hintText: 'Search for an alphabet',
@@ -40,20 +42,25 @@ class PlayScreen extends StatelessWidget {
                 builder: (context, provider, _) => GridView.count(
                   crossAxisCount: provider.columns,
                   children: List.generate(provider.letters.length, (index) {
-                    return GestureDetector(
-                      child: Padding(
-                        padding:
-                            const EdgeInsets.only(left: 5, top: 10, right: 5),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: provider.gridColors[index],
-                            border: Border.all(),
-                          ),
-                          child: Center(
-                            child: Text(
-                              provider.letters[index],
-                              style: const TextStyle(fontSize: 24),
-                            ),
+                    return Padding(
+                      padding:
+                          const EdgeInsets.only(left: 5, top: 10, right: 5),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: provider.success &&
+                                  controller.text.contains(
+                                      provider.letters[index].toLowerCase())
+                              ? Colors.green
+                              : controller.text.contains(
+                                      provider.letters[index].toLowerCase())
+                                  ? Colors.red
+                                  : Colors.grey,
+                          border: Border.all(),
+                        ),
+                        child: Center(
+                          child: Text(
+                            provider.letters[index],
+                            style: const TextStyle(fontSize: 24),
                           ),
                         ),
                       ),
