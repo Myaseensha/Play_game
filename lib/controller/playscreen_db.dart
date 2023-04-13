@@ -21,128 +21,47 @@ class PlayScreenProvider with ChangeNotifier {
   void textChanged(String value) {
     searchText = value;
     gridColors = List.filled(letters.length, Colors.grey);
-    bool found = false;
 
-    for (int i = 0; i < letters.length; i++) {
-      if (searchText.isNotEmpty &&
-          letters[i].toLowerCase() == searchText[0].toLowerCase()) {
-        // Check left to right --------------------------------------------
-        found = true;
-        for (int j = 1; j < searchText.length && found; j++) {
-          if (i % columns + j >= columns ||
-              letters[i + j] != searchText[j].toLowerCase()) {
-            found = false;
+    if (searchText.isNotEmpty) {
+      for (int i = 0; i < letters.length; i++) {
+        if (letters[i].toLowerCase() == searchText[0].toLowerCase()) {
+          bool found = checkMatch(i, 1, 0); //left to right
+          found = found || checkMatch(i, -1, 0); //right to left
+          found = found || checkMatch(i, 0, 1); //top to bottom
+          found = found || checkMatch(i, 0, -1); //bottom to top
+          found = found || checkMatch(i, -1, -1); //top-right to bottom-left
+          found = found || checkMatch(i, 1, 1); //top-left to bottom-right
+          found = found || checkMatch(i, -1, 1); //bottom-right to top-left
+          found = found || checkMatch(i, 1, -1); //bottom-left to top-right
+          if (found) {
+            gridColors[i] = Colors.green;
+            break;
           }
-        }
-        if (found) {
-          for (int j = 0; j < searchText.length; j++) {
-            gridColors[i + j] = Colors.green;
-          }
-          continue;
-        }
-        // Check right to left --------------------------------------------
-        found = true;
-        for (int j = 1; j < searchText.length && found; j++) {
-          if (i % columns - j < 0 ||
-              letters[i - j] != searchText[j].toLowerCase()) {
-            found = false;
-          }
-        }
-        if (found) {
-          for (int j = 0; j < searchText.length; j++) {
-            gridColors[i - j] = Colors.green;
-          }
-          continue;
-        }
-        // Check top to bottom --------------------------------------------
-        found = true;
-        for (int j = 1; j < searchText.length && found; j++) {
-          if (i ~/ columns + j >= rows ||
-              letters[i + j * columns] != searchText[j].toLowerCase()) {
-            found = false;
-          }
-        }
-        if (found) {
-          for (int j = 0; j < searchText.length; j++) {
-            gridColors[i + j * columns] = Colors.green;
-          }
-          continue;
-        }
-        // Check bottom to top -----------------------------------------------
-        found = true;
-        for (int j = 1; j < searchText.length && found; j++) {
-          if (i ~/ columns - j < 0 ||
-              letters[i - j * columns] != searchText[j].toLowerCase()) {
-            found = false;
-          }
-        }
-        if (found) {
-          for (int j = 0; j < searchText.length; j++) {
-            gridColors[i - j * columns] = Colors.green;
-          }
-          continue;
-        }
-        // Check top-right to bottom-left------------------------------------
-        found = true;
-        for (int j = 1; j < searchText.length && found; j++) {
-          if (i % columns - j < 0 ||
-              i ~/ columns - j < 0 ||
-              letters[i - j * columns - j] != searchText[j].toLowerCase()) {
-            found = false;
-          }
-        }
-        if (found) {
-          for (int j = 0; j < searchText.length; j++) {
-            gridColors[i - j * columns - j] = Colors.green;
-          }
-          continue;
-        } // Check top-left to bottom-right-----------------------------------
-        found = true;
-        for (int j = 1; j < searchText.length && found; j++) {
-          if (i % columns + j >= columns ||
-              i ~/ columns + j >= rows ||
-              letters[i + j * columns + j] != searchText[j].toLowerCase()) {
-            found = false;
-          }
-        }
-        if (found) {
-          for (int j = 0; j < searchText.length; j++) {
-            gridColors[i + j * columns + j] = Colors.green;
-          }
-          continue;
-        }
-        // Check bottom-right to top-left------------------------------------
-        found = true;
-        for (int j = 1; j < searchText.length && found; j++) {
-          if (i % columns - j < 0 ||
-              i ~/ columns - j < 0 ||
-              letters[i - j * columns + j] != searchText[j].toLowerCase()) {
-            found = false;
-          }
-        }
-        if (found) {
-          for (int j = 0; j < searchText.length; j++) {
-            gridColors[i - j * columns + j] = Colors.green;
-          }
-          continue;
-        }
-        // Check bottom-left to top-right---------------------------------------
-        found = true;
-        for (int j = 1; j < searchText.length && found; j++) {
-          if (i % columns + j >= columns ||
-              i ~/ columns - j < 0 ||
-              letters[i - j * columns + j] != searchText[j].toLowerCase()) {
-            found = false;
-          }
-        }
-        if (found) {
-          for (int j = 0; j < searchText.length; j++) {
-            gridColors[i - j * columns + j] = Colors.green;
-          }
-          continue;
         }
       }
     }
+
     notifyListeners();
+  }
+
+  bool checkMatch(int index, int xAxis, int yAxis) {
+    for (int j = 1; j < searchText.length; j++) {
+      int row = (index ~/ columns) + (yAxis * j);
+      int col = (index ~/ columns) + (xAxis * j);
+      if (row < 0 || row >= rows || col < 0 || col >= columns) {
+        return false;
+      }
+      int letterIndex = (row * columns) + col;
+      if (letters[letterIndex].toLowerCase() != searchText[j].toLowerCase()) {
+        return false;
+      }
+    }
+    for (int j = 0; j < searchText.length; j++) {
+      int row = (index ~/ columns) + (yAxis * j);
+      int col = (index ~/ columns) + (xAxis * j);
+      int letterIndex = (row * columns) + col;
+      gridColors[letterIndex] = Colors.green;
+    }
+    return true;
   }
 }
