@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
 
 class PlayScreenProvider with ChangeNotifier {
@@ -5,63 +6,98 @@ class PlayScreenProvider with ChangeNotifier {
   final int rows;
   final int columns;
   late final List<String> letters;
-  late List<Color> gridColors;
   String searchText = '';
+  bool success = false;
 
   PlayScreenProvider(this.contents, this.rows, this.columns) {
     letters = contents.length > rows * columns
         ? contents.sublist(0, rows * columns)
         : contents.toList();
-    gridColors = List.filled(letters.length, Colors.grey);
   }
+  void textChanged(String searchText) {
+    searchText = searchText.toLowerCase();
+    log(searchText);
+    var characters = contents.map((e) => e.toLowerCase()).toList();
+    log(characters.toString());
 
-  List<String> get letter => letters;
-  List<Color> get gridColor => gridColors;
+    var mRow = rows;
+    var mCol = columns;
+    List<List<String>> charMatrix = [];
+    int pos = 0;
 
-  void textChanged(String value) {
-    searchText = value;
-    gridColors = List.filled(letters.length, Colors.grey);
+    for (int i = 0; i < mRow; i++) {
+      if (charMatrix.length != i + 1) {
+        charMatrix.add([]);
+      }
+      for (var j = 0; j < mCol; j++, pos++) {
+        charMatrix[i].add(characters[pos]);
+      }
+    }
 
-    if (searchText.isNotEmpty) {
-      for (int i = 0; i < letters.length; i++) {
-        if (letters[i].toLowerCase() == searchText[0].toLowerCase()) {
-          bool found = checkMatch(i, 1, 0); //left to right
-          found = found || checkMatch(i, -1, 0); //right to left
-          found = found || checkMatch(i, 0, 1); //top to bottom
-          found = found || checkMatch(i, 0, -1); //bottom to top
-          found = found || checkMatch(i, -1, -1); //top-right to bottom-left
-          found = found || checkMatch(i, 1, 1); //top-left to bottom-right
-          found = found || checkMatch(i, -1, 1); //bottom-right to top-left
-          found = found || checkMatch(i, 1, -1); //bottom-left to top-right
-          if (found) {
-            gridColors[i] = Colors.green;
-            break;
+    log(charMatrix[0].toString());
+    log(charMatrix[1].toString());
+    log(charMatrix[2].toString());
+
+    int prevRow = -1;
+    int prevCol = -1;
+    int? patternRow;
+    int? patternCol;
+    bool patternSet = false;
+    int flowCount = 0;
+
+    for (int i = 0; i < searchText.length; i++) {
+      String currentText = searchText[i];
+      bool isFlow = false;
+
+      for (var row = 0; row < charMatrix.length; row++) {
+        for (var col = 0; col < charMatrix[0].length; col++) {
+          if (charMatrix[row][col] == currentText &&
+              (prevRow + 1 == row ||
+                  prevRow - 1 == row ||
+                  prevRow == row ||
+                  prevRow == -1) &&
+              (prevCol + 1 == col ||
+                  prevCol - 1 == col ||
+                  prevCol == col ||
+                  prevCol == -1)) {
+            if (patternSet == true) {
+              if (prevCol + patternCol! == col &&
+                  prevRow + patternRow! == row) {
+                prevRow = row;
+                prevCol = col;
+                log('$row,$col');
+                flowCount++;
+                isFlow = true;
+              }
+            } else {
+              if (prevRow != -1 && prevCol != -1) {
+                patternCol = col - prevCol;
+                patternRow = row - prevRow;
+                patternSet = true;
+              }
+              prevRow = row;
+              prevCol = col;
+              log('$row,$col');
+              flowCount++;
+              isFlow = true;
+            }
           }
         }
       }
-    }
-
-    notifyListeners();
-  }
-
-  bool checkMatch(int index, int xAxis, int yAxis) {
-    for (int j = 1; j < searchText.length; j++) {
-      int row = (index ~/ columns) + (yAxis * j);
-      int col = (index ~/ columns) + (xAxis * j);
-      if (row < 0 || row >= rows || col < 0 || col >= columns) {
-        return false;
-      }
-      int letterIndex = (row * columns) + col;
-      if (letters[letterIndex].toLowerCase() != searchText[j].toLowerCase()) {
-        return false;
+      if (isFlow == false) {
+        success = false;
+        notifyListeners();
+        return;
       }
     }
-    for (int j = 0; j < searchText.length; j++) {
-      int row = (index ~/ columns) + (yAxis * j);
-      int col = (index ~/ columns) + (xAxis * j);
-      int letterIndex = (row * columns) + col;
-      gridColors[letterIndex] = Colors.green;
+    if (flowCount == searchText.length) {
+      success = true;
+      notifyListeners();
+      return;
+    } else {
+      success = false;
+      notifyListeners();
+      return;
     }
-    return true;
   }
 }
