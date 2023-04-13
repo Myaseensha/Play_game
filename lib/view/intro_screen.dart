@@ -107,8 +107,8 @@ class IntroScreen extends StatelessWidget {
         context,
         MaterialPageRoute(
           builder: (context) => PlayScreen(
-            columns: int.parse(columnTextController.text),
-            rows: int.parse(rowTextController.text),
+            columns: onetext,
+            rows: twotext,
             contents: contents,
           ),
         ),
